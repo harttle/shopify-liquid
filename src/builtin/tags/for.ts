@@ -6,11 +6,11 @@ import { Hash } from '../../template/tag/hash'
 export default {
   type: 'block',
   parse: function (token: TagToken, remainTokens: TopLevelToken[]) {
-    const toknenizer = new Tokenizer(token.args)
+    const tokenizer = new Tokenizer(token.args)
 
-    const variable = toknenizer.readWord()
-    const inStr = toknenizer.readWord()
-    const collection = toknenizer.readValue()
+    const variable = tokenizer.readWord()
+    const inStr = tokenizer.readWord()
+    const collection = tokenizer.readValue()
     assert(
       variable.size() && inStr.content === 'in' && collection,
       () => `illegal tag: ${token.getText()}`
@@ -18,7 +18,7 @@ export default {
 
     this.variable = variable.content
     this.collection = collection
-    this.hash = new Hash(toknenizer.remaining())
+    this.hash = new Hash(tokenizer.remaining())
     this.templates = []
     this.elseTemplates = []
 
@@ -46,9 +46,12 @@ export default {
     const hash = yield this.hash.render(ctx)
     const offset = hash.offset || 0
     const limit = (hash.limit === undefined) ? collection.length : hash.limit
+    const reversedIndex = Reflect.ownKeys(hash).indexOf('reversed')
 
+    // reverse collection before slicing if 'reversed' is 1st parameter
+    if (reversedIndex === 0) collection.reverse()
     collection = collection.slice(offset, offset + limit)
-    if ('reversed' in hash) collection.reverse()
+    if (reversedIndex > 0) collection.reverse()
 
     const scope = { forloop: new ForloopDrop(collection.length) }
     ctx.push(scope)
